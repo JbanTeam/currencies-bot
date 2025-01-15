@@ -1,6 +1,6 @@
 import { CommandHandler } from '../handlers/CommandHandler';
 import { MessageHandler } from '../handlers/MessageHandler';
-import { Logger } from '../services/Logger';
+import { ExchangeApiService } from '../services/ExchangeApiService';
 import { BotProvider, IncomingMessage } from '../types/BotTypes';
 
 export class BotMain {
@@ -10,8 +10,9 @@ export class BotMain {
 
   constructor(provider: BotProvider) {
     this.provider = provider;
-    this.messageHandler = new MessageHandler();
-    this.commandHandler = new CommandHandler();
+    const exchangeApi = new ExchangeApiService();
+    this.messageHandler = new MessageHandler(exchangeApi);
+    this.commandHandler = new CommandHandler(exchangeApi);
   }
 
   async sendMessage(chatId: string, text: string): Promise<void> {
@@ -20,8 +21,6 @@ export class BotMain {
 
   async start(): Promise<void> {
     await this.provider.onMessage(async (message: IncomingMessage) => {
-      // Logger.log(`Received message: ${message.text}`);
-
       let response: string;
       if (message.text.startsWith('/')) {
         response = await this.commandHandler.handleCommand(message.text);

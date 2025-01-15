@@ -4,15 +4,14 @@ import { ExchangeApiService } from '../services/ExchangeApiService';
 
 export class MessageHandler {
   private exchangeApiService: ExchangeApiService;
-  constructor() {
-    this.exchangeApiService = new ExchangeApiService();
+  constructor(exchangeApi: ExchangeApiService) {
+    this.exchangeApiService = exchangeApi;
   }
 
   async handleMessage(message: string): Promise<string> {
-    Logger.log(`Received message: ${message}`);
-
     if (isCurrencyPairValid(message)) {
-      const rateMessage = await this.exchangeApiService.fetchExchangeRates(message);
+      Logger.log(`Request to exchange rates api: ${message}`);
+      const rateMessage = await this.exchangeApiService.getExchangeRates(message);
       return rateMessage;
     }
 

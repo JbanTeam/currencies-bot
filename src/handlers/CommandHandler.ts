@@ -1,7 +1,11 @@
+import { ExchangeApiService } from '../services/ExchangeApiService';
 import { Logger } from '../services/Logger';
 
 export class CommandHandler {
-  constructor() {}
+  private exchangeApi: ExchangeApiService;
+  constructor(exchangeApi: ExchangeApiService) {
+    this.exchangeApi = exchangeApi;
+  }
 
   async handleCommand(command: string): Promise<string> {
     Logger.log(`Received command: ${command}`);
@@ -13,7 +17,13 @@ export class CommandHandler {
       case '/help':
         return 'Доступные команды: /start, /help, /currency.';
       case '/currency':
-        return 'Введите валютную пару в формате USD-EUR, чтобы узнать курс обмена.';
+        try {
+          const data = await this.exchangeApi.fetchRates();
+          return `Введите валютную пару в формате <b><u>USD-EUR</u></b>, чтобы узнать курс обмена.\n
+<b><u>Доступные валюты:</u></b> ${Object.keys(data.rates).join(', ')}`;
+        } catch (error) {
+          return 'Сорян! Что-то пошло не так. Попробуйте позже.';
+        }
       default:
         return 'Неизвестная команда. Попробуйте /help.';
     }

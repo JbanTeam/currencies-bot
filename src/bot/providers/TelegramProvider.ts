@@ -1,3 +1,4 @@
+import { parse } from 'path';
 import { BotProvider, IncomingMessage } from '../../types/BotTypes';
 
 export class TelegramProvider implements BotProvider {
@@ -17,6 +18,7 @@ export class TelegramProvider implements BotProvider {
       body: JSON.stringify({
         chat_id: chatId,
         text: text,
+        parse_mode: 'html',
       }),
     });
 
@@ -31,6 +33,10 @@ export class TelegramProvider implements BotProvider {
       const url = `https://api.telegram.org/bot${this.token}/getUpdates?offset=${offset}`;
       const response = await fetch(url);
       const data = await response.json();
+
+      if (!data.ok) {
+        throw new Error(`Failed to get updates: ${data.description}`);
+      }
 
       if (data.ok && data.result.length > 0) {
         for (const update of data.result) {
