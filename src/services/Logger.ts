@@ -6,7 +6,7 @@ export class Logger {
 
   static error(message: string): void {
     const timestamp = new Date().toISOString();
-    console.error(`[${timestamp}] ERROR: ${message}`);
+    console.error(`[${timestamp}] ${message}`);
   }
 
   static warn(message: string): void {
