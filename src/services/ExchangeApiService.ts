@@ -20,6 +20,7 @@ export class ExchangeApiService {
       return data;
     } catch (error) {
       Logger.error(`${error}`);
+      throw error;
     }
   }
 
