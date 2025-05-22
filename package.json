@@ -6,7 +6,7 @@
     "dev": "nodemon src/app.ts",
     "start": "ts-node src/app.ts",
     "build": "tsc",
-    "test": "jest"
+    "test": "jest --selectProjects Unit"
   },
   "author": "Vital Alex",
   "license": "ISC",

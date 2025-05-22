@@ -1,5 +1,4 @@
-import { parse } from 'path';
-import { BotProvider, IncomingMessage } from '../../types/BotTypes';
+import { BotProvider, IncomingMessage, TgMessage, TgUpdateResponse } from '@src/types/types';
 
 export class TelegramProvider implements BotProvider {
   private token: string;
@@ -8,7 +7,7 @@ export class TelegramProvider implements BotProvider {
     this.token = token;
   }
 
-  async sendMessage(chatId: string, text: string): Promise<void> {
+  async sendMessage(chatId: number, text: string): Promise<void> {
     const url = `https://api.telegram.org/bot${this.token}/sendMessage`;
     const response = await fetch(url, {
       method: 'POST',
@@ -27,12 +26,13 @@ export class TelegramProvider implements BotProvider {
     }
   }
 
+  // TODO: перезапускать бота при ошибке
   async onMessage(callback: (message: IncomingMessage) => void): Promise<void> {
     let offset = 0;
     while (true) {
-      const url = `https://api.telegram.org/bot${this.token}/getUpdates?offset=${offset}`;
+      const url = `https://api.telegram.org/bot${this.token}/getUpdates?offset=${offset}&&allowed_updates=["message"]`;
       const response = await fetch(url);
-      const data = await response.json();
+      const data = (await response.json()) as TgUpdateResponse;
 
       if (!data.ok) {
         throw new Error(`Failed to get updates: ${data.description}`);
@@ -40,19 +40,24 @@ export class TelegramProvider implements BotProvider {
 
       if (data.ok && data.result.length > 0) {
         for (const update of data.result) {
-          const message: IncomingMessage = {
-            chatId: update.message.chat.id,
-            text: update.message.text,
-            timestamp: new Date(update.message.date * 1000),
-            user: {
-              id: update.message.from.id,
-              username: update.message.from.username,
-            },
-          };
+          const message = this.parseMessage(update.message);
           callback(message);
           offset = update.update_id + 1;
         }
       }
     }
+  }
+
+  private parseMessage(message: TgMessage): IncomingMessage {
+    return {
+      chatId: message.chat.id,
+      text: message.text || '',
+      messageId: message.message_id,
+      timestamp: new Date(message.date * 1000),
+      user: {
+        id: message.from?.id || 0,
+        username: message.from?.username,
+      },
+    };
   }
 }
