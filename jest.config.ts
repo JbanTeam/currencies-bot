@@ -10,6 +10,7 @@ const config = {
   collectCoverageFrom: ['**/*.(t|j)s'],
   testEnvironment: 'node',
   moduleNameMapper: pathsToModuleNameMapper(compilerOptions.paths, { prefix: '<rootDir>/../' }),
+  setupFiles: ['dotenv/config'],
 };
 
 export default {

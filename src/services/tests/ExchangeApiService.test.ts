@@ -1,7 +1,10 @@
+import { BotError } from '@src/errors/BotError';
 import { ExchangeApiService } from '../ExchangeApiService';
 
 describe('ExchangeApiService', () => {
   let service: ExchangeApiService;
+  const base_url = 'https://api.currencylayer.com/live';
+  const full_url = `${base_url}?access_key=${process.env.EXCHANGE_API_KEY || ''}`;
 
   beforeEach(() => {
     service = new ExchangeApiService();
@@ -14,9 +17,8 @@ describe('ExchangeApiService', () => {
 
   it('should fetch exchange rates successfully', async () => {
     const mockResponse = {
-      rates: {
-        USD: 1.2,
-        EUR: 1,
+      quotes: {
+        USDEUR: 0.83,
       },
     };
 
@@ -27,9 +29,7 @@ describe('ExchangeApiService', () => {
 
     const rates = await service.fetchRates();
 
-    expect(global.fetch).toHaveBeenCalledWith(
-      `https://api.exchangeratesapi.io/v1/latest?access_key=${process.env.EXCHANGE_API_KEY || ''}`,
-    );
+    expect(global.fetch).toHaveBeenCalledWith(full_url);
     expect(rates).toEqual(mockResponse);
   });
 
@@ -41,14 +41,13 @@ describe('ExchangeApiService', () => {
       json: async () => ({}),
     });
 
-    await expect(service.fetchRates()).rejects.toThrow('Request to ExchangeRatesApi: 500-Internal Server Error');
+    await expect(service.fetchRates()).rejects.toThrow('Error fetching rates: 500-Internal Server Error');
   });
 
   it('should return exchange rate for a valid currency pair', async () => {
     const mockResponse = {
-      rates: {
-        USD: 1.2,
-        EUR: 1,
+      quotes: {
+        USDEUR: 0.83,
       },
     };
 
@@ -58,14 +57,13 @@ describe('ExchangeApiService', () => {
     });
 
     const result = await service.getExchangeRates('USD-EUR');
-    expect(result).toBe('Текущий курс USD к EUR: 0.83.');
+    expect(result).toBe('Текущий курс USD-EUR: $0.83');
   });
 
-  it('should return an error message for an invalid currency pair', async () => {
+  it('should return an error for not exist currency pair', async () => {
     const mockResponse = {
-      rates: {
-        USD: 1.2,
-        EUR: 1,
+      quotes: {
+        USDEUR: 0.83,
       },
     };
 
@@ -74,16 +72,21 @@ describe('ExchangeApiService', () => {
       json: async () => mockResponse,
     });
 
-    const result = await service.getExchangeRates('USD-EUH');
-    expect(result).toBe('Валютная пара не найдена.');
+    await expect(service.getExchangeRates('USD-YYY')).rejects.toThrow(BotError);
   });
 
-  it('should return an error message if fetchRates fails', async () => {
-    (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
+  it('should return an error for invalid currency pair', async () => {
+    const mockResponse = {
+      quotes: {
+        USDEUR: 0.83,
+      },
+    };
 
-    const result = await service.getExchangeRates('USD-EUR');
-    expect(result).toBe(
-      'Ой! Что-то пошло не так. Убедитесь, что вы ввели валютную пару в формате USD-EUR, или попробуйте позже.',
-    );
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockResponse,
+    });
+
+    await expect(service.getExchangeRates('USD-invalid')).rejects.toThrow(BotError);
   });
 });
