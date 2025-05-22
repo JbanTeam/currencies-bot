@@ -3,21 +3,30 @@ import { Logger } from './Logger';
 
 export class ExchangeApiService {
   private apiKey: string;
+  private BASE_URL: string;
   constructor() {
     this.apiKey = process.env.EXCHANGE_API_KEY || '';
+    this.BASE_URL = 'https://api.currencylayer.com/live';
   }
 
-  async fetchRates(source?: string) {
-    let url = `https://api.currencylayer.com/live?access_key=${this.apiKey}`;
-    if (source) url += `&source=${source}`;
+  async fetchRates(currencyPair?: string) {
+    let url = `${this.BASE_URL}?access_key=${this.apiKey}`;
+    let pairStr = '';
+
+    if (currencyPair) {
+      const [from, to] = currencyPair.split('-');
+      url += `&source=${from}`;
+      pairStr = `: ${from}-${to}`;
+    }
+
+    Logger.log(`Request to ${this.BASE_URL}${pairStr}`);
 
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error(`Request to CurrencyLayer API: ${response.status}-${response.statusText}`);
     }
 
-    console.log(response);
-    Logger.log(`API response: ${JSON.stringify(response)}`);
+    Logger.log(`API response:`, response);
 
     const data = (await response.json()) as ExchangeRateApiResponse;
 
@@ -27,7 +36,7 @@ export class ExchangeApiService {
   async getExchangeRates(currencyPair: string): Promise<string> {
     const [from, to] = currencyPair.split('-');
     try {
-      const data = await this.fetchRates(from);
+      const data = await this.fetchRates(currencyPair);
 
       const rate = this.convertCurrency(data.quotes, from, to);
 
@@ -35,7 +44,7 @@ export class ExchangeApiService {
 
       return `Текущий курс ${from} к ${to}: ${formattedRate}`;
     } catch (error) {
-      Logger.error(`${error}`);
+      Logger.error(error);
       return 'Ой! Что-то пошло не так. Убедитесь, что вы ввели валютную пару в формате USD-EUR, или попробуйте позже.';
     }
   }

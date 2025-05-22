@@ -1,3 +1,4 @@
+import { Logger } from '@src/services/Logger';
 import { CommandHandler } from '../handlers/CommandHandler';
 import { MessageHandler } from '../handlers/MessageHandler';
 import { ExchangeApiService } from '../services/ExchangeApiService';
@@ -31,7 +32,7 @@ export class BotMain {
           }
           await this.sendMessage(message.chatId, response);
         } catch (error) {
-          console.error('Error processing message:', error);
+          Logger.error(error);
         }
       })();
     });
