@@ -1,5 +1,6 @@
 import { ExchangeRateApiResponse, ExchangeRates } from '@src/types/types';
 import { Logger } from './Logger';
+import { isCurrencyPairValid } from '@src/utils';
 
 export class ExchangeApiService {
   private apiKey: string;
@@ -34,18 +35,22 @@ export class ExchangeApiService {
   }
 
   async getExchangeRates(currencyPair: string): Promise<string> {
+    if (!isCurrencyPairValid(currencyPair)) {
+      return 'Вы ввели некорректную валютную пару. Введите валютную пару в формате USD-EUR.';
+    }
+
     const [from, to] = currencyPair.split('-');
     try {
       const data = await this.fetchRates(currencyPair);
 
       const rate = this.convertCurrency(data.quotes, from, to);
 
-      const formattedRate = this.formatCurrency(rate, to);
+      const formattedRate = this.formatCurrency(rate, from);
 
-      return `Текущий курс ${from} к ${to}: ${formattedRate}`;
+      return `Текущий курс ${from}-${to}: ${formattedRate}`;
     } catch (error) {
       Logger.error(error);
-      return 'Ой! Что-то пошло не так. Убедитесь, что вы ввели валютную пару в формате USD-EUR, или попробуйте позже.';
+      return 'Ошибка получения курса. Убедитесь, что вы ввели валютную пару из списка в формате USD-EUR, или попробуйте позже.';
     }
   }
 

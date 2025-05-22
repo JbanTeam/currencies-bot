@@ -1,14 +1,19 @@
+import { Logger } from '@src/services/Logger';
 import { BotProvider, IncomingMessage, TgMessage, TgUpdateResponse } from '@src/types/types';
 
 export class TelegramProvider implements BotProvider {
+  private TG_URL: string;
   private token: string;
+  private stopped = false;
+  private retryDelay = 3000;
 
   constructor(token: string) {
     this.token = token;
+    this.TG_URL = `https://api.telegram.org/bot${this.token}`;
   }
 
   async sendMessage(chatId: number, text: string): Promise<void> {
-    const url = `https://api.telegram.org/bot${this.token}/sendMessage`;
+    const url = `${this.TG_URL}/sendMessage`;
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -26,24 +31,32 @@ export class TelegramProvider implements BotProvider {
     }
   }
 
-  // TODO: перезапускать бота при ошибке
   async onMessage(callback: (message: IncomingMessage) => void): Promise<void> {
     let offset = 0;
-    while (true) {
-      const url = `https://api.telegram.org/bot${this.token}/getUpdates?offset=${offset}&&allowed_updates=["message"]`;
-      const response = await fetch(url);
-      const data = (await response.json()) as TgUpdateResponse;
+    while (!this.stopped) {
+      try {
+        const url = `${this.TG_URL}/getUpdates?offset=${offset}&allowed_updates=["message"]`;
+        const response = await fetch(url);
+        const data = (await response.json()) as TgUpdateResponse;
 
-      if (!data.ok) {
-        throw new Error(`Failed to get updates: ${data.description}`);
-      }
-
-      if (data.ok && data.result.length > 0) {
-        for (const update of data.result) {
-          const message = this.parseMessage(update.message);
-          callback(message);
-          offset = update.update_id + 1;
+        if (!data.ok) {
+          throw new Error(`Failed to get updates: ${data.description}`);
         }
+
+        if (data.ok && data.result.length > 0) {
+          for (const update of data.result) {
+            const message = this.parseMessage(update.message);
+            callback(message);
+            offset = update.update_id + 1;
+          }
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        Logger.error(`Error while getting updates: ${message}`);
+        if (this.stopped) return;
+
+        Logger.log(`Retrying in ${this.retryDelay / 1000} seconds...`);
+        await new Promise(res => setTimeout(res, this.retryDelay));
       }
     }
   }

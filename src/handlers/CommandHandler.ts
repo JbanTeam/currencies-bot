@@ -23,7 +23,7 @@ export class CommandHandler {
           return `${currencyMessage} ${currencies.join(', ')}`;
         } catch (error) {
           Logger.error(error);
-          return 'Сорян! Что-то пошло не так. Попробуйте позже.';
+          return 'Что-то пошло не так. Попробуйте позже.';
         }
       default:
         return 'Неизвестная команда. Попробуйте /help.';
