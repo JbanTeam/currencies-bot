@@ -1,6 +1,7 @@
 import { ExchangeRateApiResponse, ExchangeRates } from '@src/types/types';
 import { Logger } from './Logger';
 import { isCurrencyPairValid } from '@src/utils';
+import { BotError } from '@src/errors/BotError';
 
 export class ExchangeApiService {
   private apiKey: string;
@@ -24,7 +25,11 @@ export class ExchangeApiService {
 
     const response = await fetch(url);
     if (!response.ok) {
-      throw new Error(`Request to CurrencyLayer API: ${response.status}-${response.statusText}`);
+      throw new BotError(
+        `Error fetching rates: ${response.status}-${response.statusText}`,
+        'Ошибка получения курса',
+        400,
+      );
     }
 
     Logger.log(`API response:`, response);
@@ -35,23 +40,23 @@ export class ExchangeApiService {
   }
 
   async getExchangeRates(currencyPair: string): Promise<string> {
-    if (!isCurrencyPairValid(currencyPair)) {
-      return 'Вы ввели некорректную валютную пару. Введите валютную пару в формате USD-EUR.';
-    }
-
     const [from, to] = currencyPair.split('-');
-    try {
-      const data = await this.fetchRates(currencyPair);
 
-      const rate = this.convertCurrency(data.quotes, from, to);
-
-      const formattedRate = this.formatCurrency(rate, from);
-
-      return `Текущий курс ${from}-${to}: ${formattedRate}`;
-    } catch (error) {
-      Logger.error(error);
-      return 'Ошибка получения курса. Убедитесь, что вы ввели валютную пару из списка в формате USD-EUR, или попробуйте позже.';
+    if (!isCurrencyPairValid(currencyPair)) {
+      throw new BotError(
+        `Invalid currency pair`,
+        'Вы ввели некорректную валютную пару. Введите валютную пару в формате USD-EUR.',
+        400,
+      );
     }
+
+    const data = await this.fetchRates(currencyPair);
+
+    const rate = this.convertCurrency(data.quotes, from, to);
+
+    const formattedRate = this.formatCurrency(rate, from);
+
+    return `Текущий курс ${from}-${to}: ${formattedRate}`;
   }
 
   private convertCurrency(quotes: ExchangeRates, fromCurrency: string, toCurrency: string, amount: number = 1): number {
@@ -63,7 +68,11 @@ export class ExchangeApiService {
     const rate = quotes[`${fromCurrency}${toCurrency}`];
 
     if (!rate) {
-      throw new Error(`Invalid currency pair`);
+      throw new BotError(
+        `Invalid currency pair`,
+        'Вы ввели некорректную валютную пару. Введите валютную пару в формате USD-EUR.',
+        400,
+      );
     }
 
     return rate * amount;

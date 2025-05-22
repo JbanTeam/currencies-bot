@@ -1,6 +1,7 @@
 import { Logger } from '../services/Logger';
 import { ExchangeApiService } from '../services/ExchangeApiService';
 import { currencyMessage, helpMessage, startMessage } from '@src/constants';
+import { BotError } from '@src/errors/BotError';
 
 export class CommandHandler {
   private exchangeApi: ExchangeApiService;
@@ -23,6 +24,9 @@ export class CommandHandler {
           return `${currencyMessage} ${currencies.join(', ')}`;
         } catch (error) {
           Logger.error(error);
+          if (error instanceof BotError) {
+            return error.userMessage;
+          }
           return 'Что-то пошло не так. Попробуйте позже.';
         }
       default:
