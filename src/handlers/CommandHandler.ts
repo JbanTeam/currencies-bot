@@ -1,5 +1,6 @@
-import { ExchangeApiService } from '../services/ExchangeApiService';
 import { Logger } from '../services/Logger';
+import { ExchangeApiService } from '../services/ExchangeApiService';
+import { currencyMessage, helpMessage, startMessage } from '@src/constants';
 
 export class CommandHandler {
   private exchangeApi: ExchangeApiService;
@@ -12,14 +13,14 @@ export class CommandHandler {
 
     switch (command) {
       case '/start':
-        return `Привет! Я помогу вам узнать текущие курсы валют.\nНапишите /currency для получения списка доступных валют.`;
+        return startMessage;
       case '/help':
-        return 'Доступные команды: /start, /help, /currency.';
+        return helpMessage;
       case '/currency':
         try {
           const data = await this.exchangeApi.fetchRates();
           const currencies = Object.keys(data.quotes).map(key => key.slice(3));
-          return `Введите валютную пару в формате <b><u>USD-EUR</u></b>, чтобы узнать курс обмена.\n<b><u>Доступные валюты:</u></b> ${currencies.join(', ')}`;
+          return `${currencyMessage} ${currencies.join(', ')}`;
         } catch (error) {
           Logger.error(error);
           return 'Сорян! Что-то пошло не так. Попробуйте позже.';
