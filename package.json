@@ -4,9 +4,8 @@
   "main": "app.js",
   "scripts": {
     "dev": "nodemon",
-    "start": "ts-node -r tsconfig-paths/register src/app.ts",
-    "clean": "rimraf dist",
-    "build": "npm run clean && tsc",
+    "start": "node dist/app.js",
+    "build": "node esbuild.config.mjs",
     "test": "jest --selectProjects Unit"
   },
   "author": "Vital Alex",
@@ -19,6 +18,8 @@
     "@types/node": "^22.10.5",
     "@typescript-eslint/eslint-plugin": "^8.32.1",
     "@typescript-eslint/parser": "^8.32.1",
+    "esbuild": "^0.25.5",
+    "esbuild-node-externals": "^1.18.0",
     "eslint": "^9.17.0",
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-prettier": "^5.4.0",
