@@ -9,25 +9,31 @@ export class TelegramProvider implements BotProvider {
 
   constructor(token: string) {
     this.token = token;
-    this.TG_URL = `https://api.telegram.org/bot${this.token}`;
+    const tgBaseUrl = process.env.TELEGRAM_API_BASE_URL || '';
+    this.TG_URL = `${tgBaseUrl}/bot${this.token}`;
   }
 
   async sendMessage(chatId: number, text: string): Promise<void> {
-    const url = `${this.TG_URL}/sendMessage`;
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text: text,
-        parse_mode: 'html',
-      }),
-    });
+    try {
+      const url = `${this.TG_URL}/sendMessage`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: text,
+          parse_mode: 'html',
+        }),
+      });
 
-    if (!response.ok) {
-      throw new Error(`Failed to send message: ${response.statusText}`);
+      if (!response.ok) {
+        throw new Error(`Failed to send message: ${response.statusText}`);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      Logger.error(`Error while sending message: ${message}`);
     }
   }
 

@@ -1,42 +1,53 @@
-import { ExchangeRateApiResponse, ExchangeRates } from '@src/types/types';
+import * as querystring from 'querystring';
+
 import { Logger } from './Logger';
 import { isCurrencyPairValid } from '@src/utils';
 import { BotError } from '@src/errors/BotError';
+import { ExchangeRateApiResponse, ExchangeRates } from '@src/types/types';
 
 export class ExchangeApiService {
   private apiKey: string;
-  private BASE_URL: string;
+  private baseUrl: string;
   constructor() {
     this.apiKey = process.env.EXCHANGE_API_KEY || '';
-    this.BASE_URL = 'https://api.currencylayer.com/live';
+    this.baseUrl = process.env.EXCHANGE_API_BASE_URL || '';
   }
 
   async fetchRates(currencyPair?: string) {
-    let url = `${this.BASE_URL}?access_key=${this.apiKey}`;
-    let pairStr = '';
+    try {
+      const query = querystring.stringify({
+        access_key: this.apiKey,
+      });
 
-    if (currencyPair) {
-      const [from, to] = currencyPair.split('-');
-      url += `&source=${from}`;
-      pairStr = `: ${from}-${to}`;
+      let url = `${this.baseUrl}?${query}`;
+      let pairStr = '';
+
+      if (currencyPair) {
+        const [from, to] = currencyPair.split('-');
+        url += `&source=${from}`;
+        pairStr = `: ${from}-${to}`;
+      }
+
+      Logger.log(`Request to ${this.baseUrl}${pairStr}`);
+
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new BotError(
+          `Error fetching rates: ${response.status}-${response.statusText}`,
+          'Ошибка получения курса',
+          400,
+        );
+      }
+
+      Logger.log(`API response:`, response);
+
+      const data = (await response.json()) as ExchangeRateApiResponse;
+
+      return data;
+    } catch (error) {
+      Logger.error(error);
+      throw error;
     }
-
-    Logger.log(`Request to ${this.BASE_URL}${pairStr}`);
-
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new BotError(
-        `Error fetching rates: ${response.status}-${response.statusText}`,
-        'Ошибка получения курса',
-        400,
-      );
-    }
-
-    Logger.log(`API response:`, response);
-
-    const data = (await response.json()) as ExchangeRateApiResponse;
-
-    return data;
   }
 
   async getExchangeRates(currencyPair: string): Promise<string> {

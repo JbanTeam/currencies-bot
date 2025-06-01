@@ -43,7 +43,7 @@ cd currencies-bot
 npm install
 ```
 
-4. Создайте в корне каталога .env файл, добавьте в него следующие переменные:
+4. Создайте в корне каталога .env файл(в корне проекта есть пример .env.example), добавьте в него следующие переменные:
 
 - EXCHANGE_API_KEY=your_currencylayer_api_key
 - TELEGRAM_BOT_TOKEN=your_telegram_bot_token

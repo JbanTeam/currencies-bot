@@ -3,6 +3,10 @@ interface BotProvider {
   onMessage(callback: (message: IncomingMessage) => void): Promise<void>;
 }
 
+interface CommandStrategy {
+  execute(): Promise<string>;
+}
+
 type IncomingMessage = {
   chatId: number;
   text: string;
@@ -110,6 +114,7 @@ type ExchangeRateApiResponse = {
 
 export {
   BotProvider,
+  CommandStrategy,
   IncomingMessage,
   ExchangeRates,
   ExchangeRateApiResponse,
